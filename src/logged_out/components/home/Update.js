@@ -1,113 +1,99 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
-function Form() {
-  const [clubs, setClubs] = useState([
-    { Nom: 'Liverpool', Rang: '10e', ButInscrit: '42', ButConcédé: '39', DifférenceBut: '2' },
-    { Nom: 'Chelsea', Rang: '8e', ButInscrit: '52', ButConcédé: '29', DifférenceBut: '30' },
-    { Nom: 'Man.city', Rang: '2e', ButInscrit: '62', ButConcédé: '15', DifférenceBut: '42' },
-  ]);
+const PlayerList = () => {
+  const [players, setPlayers] = useState([]);
 
-  const [editClubs, setEditClubs] = useState({});
+  useEffect(() => {
+    getPlayers();
+  }, []);
 
-  const [nom, setNom] = useState('');
-  const [rang, setRang] = useState('');
-  const [butInscrit, setButInscrit] = useState('');
-  const [butConcede, setButConcede] = useState('');
-  const [differenceBut, setDifferenceBut] = useState('');
-
-  const handleEditUser = (name) => {
-    console.log(`Editing club with name ${name}`);
-    const clubToEdit = clubs.find((club) => club.Nom === name);
-    setEditClubs(clubToEdit);
-    setNom(clubToEdit.Nom);
-    setRang(clubToEdit.Rang);
-    setButInscrit(clubToEdit.ButInscrit);
-    setButConcede(clubToEdit.ButConcédé);
-    setDifferenceBut(clubToEdit.DifférenceBut);
+  const getPlayers = async () => {
+    try {
+      const res = await axios.get('http://localhost:27017/PLdata');
+      setPlayers(res.data);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleDeleteUser = (index) => {
-    // do something with index
-    console.log(`Deleting club with index ${index}`);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const updatedClubs = clubs.map((club) => {
-      if (club.Nom === editClubs.Nom) {
-        return {
-          Nom: nom,
-          Rang: rang,
-          ButInscrit: butInscrit,
-          ButConcédé: butConcede,
-          DifférenceBut: differenceBut,
-        };
-      } else {
-        return club;
-      }
-    });
-    setClubs(updatedClubs);
-    setNom('');
-    setRang('');
-    setButInscrit('');
-    setButConcede('');
-    setDifferenceBut('');
+  const updatePlayer = async (id, data) => {
+    try {
+      await axios.put(`http://localhost:27017/PLdata/${id}`, data);
+      const updatedPlayers = players.map((player) =>
+        player._id === id ? { ...player, ...data } : player
+      );
+      setPlayers(updatedPlayers);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
     <>
-      <h1>CRUD - UPDATE</h1>
-
-            <h2>Clubs</h2>
-      <ul>
-        {clubs.map((club, index) => (
-          <li key={club.Nom}>
-            {club.Nom} ({club.Rang}){' '}
-            <button onClick={() => handleEditUser(club.Nom)}>Edit</button>{' '}
-          </li>
-        ))}
-      </ul>
-
-      <h2>Edit Club</h2>
-      <form onSubmit={handleSubmit}>
-        <label>
-          Nom:
-          <input type="text" value={nom} onChange={(e) => setNom(e.target.value)} />
-        </label>
-        <br />
-        <label>
-          Rang:
-          <input type="text" value={rang} onChange={(e) => setRang(e.target.value)} />
-        </label>
-        <br />
-        <label>
-          But Inscrit:
-          <input type="text" value={butInscrit} onChange={(e) => setButInscrit(e.target.value)} />
-        </label>
-        <br />
-        <label>
-          But Concédé:
-          <input type="text" value={butInscrit} onChange={(e) => setButConcede(e.target.value)} />
-        </label>
-        <br />
-        <label>
-          Différence But:
-          <input type="text" value={butInscrit} onChange={(e) => setDifferenceBut(e.target.value)} />
-        </label>
-        <button type="submit">Editer</button>
-    </form>
-    
-    <style>
+      <h1>Matches</h1>
+      <div className="card mt-4">
+        <div className="card-header">
+          <h4 className="card-title">Premier League</h4>
+        </div>
+        <div className="card-body">
+          <div className="col-md-12">
+            <table className="table table-bordered">
+              <thead>
+                <tr>
+                  <th>Nom</th>
+                  <th>Nationalité</th>
+                  <th>Date de naissance</th>
+                  <th>Position</th>
+                  <th>Club</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {players.map((player, i) => (
+                  <tr key={i}>
+                    <td>{player.name}</td>
+                    <td>{player.nationality}</td>
+                    <td>{player.birthDate}</td>
+                    <td>{player.position}</td>
+                    <td>{player.club}</td>
+                    <td>
+                      <button
+                        onClick={() =>
+                          updatePlayer(player._id, {
+                            name: 'New Name',
+                            nationality: 'New Nationality',
+                            birthDate: 'New Birth Date',
+                            position: 'New Position',
+                            club: 'New Club',
+                          })
+                        }
+                        className="btn btn-primary"
+                      >
+                        Modifier
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <style>
         {`
-        .btn.btn-primary.btn-sm.pull-right {
+          .btn.btn-primary.btn-sm.pull-right {
             float: right;
-        }
-        .card-title {
+          }
+          .card-title {
             float: left;
-        }
-        .card {
+          }
+          .card {
             border: none !important;
-            box-shadow: 0 0.46875rem 2.1875rem rgba(4,9,20,0.03), 0 0.9375rem 1.40625rem rgba(4,9,20,0.03), 0 0.25rem 0.53125rem rgba(4,9,20,0.05), 0 0.125rem 0.1875rem rgba(4,9,20,0.03);
+            box-shadow: 0 0.46875rem 2.1875rem rgba(4, 9, 20, 0.03),
+              0 0.9375rem 1.40625rem rgba(4, 9, 20, 0.03),
+              0 0.25rem 0.53125rem rgba(4, 
+9,20,0.03), 0 0.25rem 0.53125rem rgba(4,9,20,0.05), 0 0.125rem 0.1875rem rgba(4,9,20,0.03);
         }
         .card-header {
             padding: .50rem 1.25rem !important;
@@ -136,4 +122,4 @@ function Form() {
   );
 }
 
-export default Form;
+export default PlayerList;
